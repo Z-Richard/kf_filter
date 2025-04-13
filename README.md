@@ -2,6 +2,8 @@
 
 A Python package for filtering equatorial waves in the wavenumber-frequency domain.
 
+![Example Filter Visualization](example/figures/kelvin_filtered_OLR.png)
+
 ## Features
 
 - Implements wavenumber-frequency filtering for equatorial waves.
@@ -13,8 +15,7 @@ A Python package for filtering equatorial waves in the wavenumber-frequency doma
 The easiest way to install is through pip.
 
 ```bash
-git clone https://github.com/z-richard/kf_filter.git
-cd kf_filter
+pip install kf-filter
 ```
 
 ## Usage
