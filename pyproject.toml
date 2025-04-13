@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "kf-filter"
+version = "0.0.1"
+description = "Filtering on the wavenumber-frequency domain based on WK99."
+authors = ["Richard Zhuang <hz542@uw.edu>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+numpy = "^1.21"
+xarray = "^2024.11.0"
+scipy = "^1.7"
+matplotlib = "^3.4"
+seaborn = "^0.11"
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.0"
+black = "^23.0"
+flake8 = "^6.0"
+mypy = "^1.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
