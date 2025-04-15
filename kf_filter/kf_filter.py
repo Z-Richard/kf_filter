@@ -18,7 +18,7 @@ import seaborn as sns
 
 from kf_filter.consts import *
 
-sns.set_theme(style="whitegrid", palette="vlag")
+sns.set_theme(style="ticks")
 
 
 def harmonic_func(n, period=365, num_fs=4):
@@ -182,8 +182,16 @@ class KF():
         self._reorder_fft()
 
     def get_fft(self) -> xr.DataArray:
-        """Retrieve the original fft data (without reordering)."""
-        return self.kf
+        """Retrieve the fft data following CCEW convention."""
+        return self.kf_reordered
+    
+    def get_wavenumber(self) -> xr.DataArray:
+        """Retrieve the wavenumber data following CCEW convention."""
+        return self.kf_reordered.wavenumber
+    
+    def get_frequency(self) -> xr.DataArray:
+        """Retrieve the frequency data following CCEW convention."""
+        return self.kf_reordered.frequency
     
     def _reorder_fft(self) -> None:
         r"""Reorder fft from NumPy convention to CCEW convention.
@@ -741,6 +749,51 @@ class KF():
         plt.title(f'{KF.wave_title[wave_type]} Filter')
         plt.show()
 
+    def get_mask(self, wave_type):
+        """
+        Get the mask for a specific wave type.
+
+        Parameters
+        ----------
+        wave_type : str
+            Must be one of 'er', 'kelvin', 'ig', 'eig', 'mrg', 'td', 'mjo'.
+
+        Returns
+        -------
+        mask : xr.DataArray
+            The mask for the specified wave type.
+        """
+        if wave_type == 'er':
+            if not hasattr(self, 'er_mask'):
+                self.er_filter()
+            return self.er_mask
+        elif wave_type == 'kelvin':
+            if not hasattr(self, 'kelvin_mask'):
+                self.kelvin_filter()
+            return self.kelvin_mask
+        elif wave_type == 'ig':
+            if not hasattr(self, 'ig_mask'):
+                self.ig_filter()
+            return self.ig_mask
+        elif wave_type == 'eig':
+            if not hasattr(self, 'eig_mask'):
+                self.eig_filter()
+            return self.eig_mask
+        elif wave_type == 'mrg':
+            if not hasattr(self, 'mrg_mask'):
+                self.mrg_filter()
+            return self.mrg_mask
+        elif wave_type == 'td':
+            if not hasattr(self, 'td_mask'):
+                self.td_filter()
+            return self.td_mask
+        elif wave_type == 'mjo':
+            if not hasattr(self, 'mjo_mask'):
+                self.mjo_filter()
+            return self.mjo_mask
+        else:
+            raise ValueError(f'Unsupported wave type "{wave_type}".')
+
     def visualize_filter(self, 
                          wave_type : str,
                          hide_negative : bool=True) -> None:
@@ -752,20 +805,6 @@ class KF():
         wave_type : str
             Must be one of 'er', 'kelvin', 'ig', 'eig', 'mrg', 'td'.
         """
-        if wave_type == 'er':
-            self._visualize_aux(wave_type, self.er_mask, hide_negative=hide_negative)
-        elif wave_type == 'kelvin':
-            self._visualize_aux(wave_type, self.kelvin_mask, hide_negative=hide_negative)
-        elif wave_type == 'ig':
-            self._visualize_aux(wave_type, self.ig_mask, hide_negative=hide_negative)
-        elif wave_type == 'eig':
-            self._visualize_aux(wave_type, self.eig_mask, hide_negative=hide_negative)
-        elif wave_type == 'mrg':
-            self._visualize_aux(wave_type, self.mrg_mask, hide_negative=hide_negative)
-        elif wave_type == 'td':
-            self._visualize_aux(wave_type, self.td_mask, hide_negative=hide_negative)
-        elif wave_type == 'mjo':
-            self._visualize_aux(wave_type, self.mjo_mask, hide_negative=hide_negative)
-        else:
-            raise ValueError(f'Unsupported wave type "{wave_type}".')
+        mask = self.get_mask(wave_type)
+        self._visualize_aux(wave_type, mask, hide_negative)
             

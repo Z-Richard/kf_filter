@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "kf-filter"
-version = "0.0.1"
+version = "0.0.1.post1"
 description = "Filtering on the wavenumber-frequency domain based on WK99."
 authors = ["Richard Zhuang <hz542@uw.edu>"]
 license = "MIT"
