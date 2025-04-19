@@ -272,3 +272,42 @@ def wave_mask(wavenumber : xr.DataArray | np.ndarray,
                 logical_minus.append(func(operator.gt, omega, k, n))
 
         return _combine_plus_minus(logical_plus, logical_minus)
+
+def td_mask(wavenumber : xr.DataArray | np.ndarray,
+            frequency : xr.DataArray | np.ndarray,
+            fmin : float | None=None, 
+            fmax : float | None=None, 
+            kmin : int | None=-20, 
+            kmax : int | None=-6) -> xr.DataArray:
+    r"""Returns a mask for tropical depression (TD).
+
+    Parameters
+    ----------
+    wavenumber : xr.DataArray | np.ndarray
+    frequency : xr.DataArray | np.ndarray
+
+    fmin, fmax : float or None
+        Minimum and maximum frequency for filtering
+
+    kmin, kmax : int or None
+        Minimum and maximum frequency for filtering
+
+    Returns
+    -------
+    mask : xr.DataArray
+    """
+    wavenumber, frequency = _wrap_to_xarray(wavenumber, frequency)
+
+    logical_plus, logical_minus = kf_mask(wavenumber,
+                                          frequency,
+                                          fmin, fmax, 
+                                          kmin, kmax,
+                                          return_individual=True)
+
+    logical_plus.append((84 * frequency + wavenumber - 22 < 0))
+    logical_minus.append((84 * frequency + wavenumber + 22 > 0))
+
+    logical_plus.append((210 * frequency + 2.5 * wavenumber - 13 > 0))
+    logical_minus.append((210 * frequency + 2.5 * wavenumber + 13 < 0))
+
+    return _combine_plus_minus(logical_plus, logical_minus)

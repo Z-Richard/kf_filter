@@ -22,7 +22,7 @@ from kf_filter.consts import (
 
 from kf_filter.util import (
     split_hann_taper,
-    _combine_plus_minus,
+    td_mask,
     kf_mask,
     wave_mask
 )
@@ -461,19 +461,9 @@ class KF():
         """
         wavenumber, frequency = self.kf_reordered.wavenumber, self.kf_reordered.frequency
 
-        logical_plus, logical_minus = kf_mask(wavenumber,
-                                              frequency,
-                                              fmin, fmax, 
-                                              kmin, kmax,
-                                              return_individual=True)
-
-        logical_plus.append((84 * frequency + wavenumber - 22 < 0))
-        logical_minus.append((84 * frequency + wavenumber + 22 > 0))
-
-        logical_plus.append((210 * frequency + 2.5 * wavenumber - 13 > 0))
-        logical_minus.append((210 * frequency + 2.5 * wavenumber + 13 < 0))
-
-        mask = _combine_plus_minus(logical_plus, logical_minus)
+        mask = td_mask(wavenumber,
+                       frequency,
+                       fmin, fmax, kmin, kmax)
 
         self._save_mask(mask, 'td')
         return self.kf_filter(mask)
@@ -501,8 +491,8 @@ class KF():
         as in Mayta and Adames (2023).
         """
         mask = kf_mask(self.kf_reordered.wavenumber,
-                          self.kf_reordered.frequency,
-                          fmin, fmax, kmin, kmax)
+                       self.kf_reordered.frequency,
+                       fmin, fmax, kmin, kmax)
         self._save_mask(mask, 'mjo')
         return self.kf_filter(mask)
 
