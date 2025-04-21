@@ -117,7 +117,7 @@ def _nondim_k_omega(wavenumber : xr.DataArray | np.ndarray,
     -----
     c = sqrt(g * h)
     """
-    _wrap_to_xarray(wavenumber, frequency)
+    wavenumber, frequency = _wrap_to_xarray(wavenumber, frequency)
     
     c = np.sqrt(g * h)
 
@@ -275,10 +275,12 @@ def wave_mask(wavenumber : xr.DataArray | np.ndarray,
 
 def td_mask(wavenumber : xr.DataArray | np.ndarray,
             frequency : xr.DataArray | np.ndarray,
-            fmin : float | None=None, 
+            fmin : float | None=None,
             fmax : float | None=None, 
             kmin : int | None=-20, 
-            kmax : int | None=-6) -> xr.DataArray:
+            kmax : int | None=-6,
+            filter_params : tuple[tuple[float, float], 
+                                  tuple[float, float]] | None=None) -> xr.DataArray:
     r"""Returns a mask for tropical depression (TD).
 
     Parameters
@@ -292,6 +294,16 @@ def td_mask(wavenumber : xr.DataArray | np.ndarray,
     kmin, kmax : int or None
         Minimum and maximum frequency for filtering
 
+    filter_params : tuple[tuple[float, float],
+                          tuple[float, float]] or None
+        A tuple of tuples containing the filter parameters for
+        the TD mask. The first tuple contains the parameters for
+        the upper bound, and the second tuple contains the parameters
+        for the lower bound. Each tuple should contain two values:
+        (a, b), where a is the slope for wavenumber and frequency
+        and b is the intercept. If None, the default values will
+        be used.
+
     Returns
     -------
     mask : xr.DataArray
@@ -303,11 +315,18 @@ def td_mask(wavenumber : xr.DataArray | np.ndarray,
                                           fmin, fmax, 
                                           kmin, kmax,
                                           return_individual=True)
+    
+    if filter_params is None:
+        filter_params = ((84, 22), (84, 13 / 2.5))
 
-    logical_plus.append((84 * frequency + wavenumber - 22 < 0))
-    logical_minus.append((84 * frequency + wavenumber + 22 > 0))
+    upper_params, lower_params = filter_params
+    upper_a, upper_b = upper_params
+    lower_a, lower_b = lower_params
 
-    logical_plus.append((210 * frequency + 2.5 * wavenumber - 13 > 0))
-    logical_minus.append((210 * frequency + 2.5 * wavenumber + 13 < 0))
+    logical_plus.append((upper_a * frequency + wavenumber < upper_b))
+    logical_minus.append((upper_a * frequency + wavenumber + upper_b > 0))
+
+    logical_plus.append((lower_a * frequency + wavenumber > lower_b))
+    logical_minus.append((lower_a * frequency + wavenumber + lower_b < 0))
 
     return _combine_plus_minus(logical_plus, logical_minus)
