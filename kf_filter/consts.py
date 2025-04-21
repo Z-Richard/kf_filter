@@ -29,3 +29,8 @@ wave_title = {
 }
 
 wave_types = list(wave_func.keys())
+
+filter_dict = {
+    'upper': (84, 22),
+    'lower': (84, 13 / 2.5),
+}

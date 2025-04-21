@@ -447,8 +447,7 @@ class KF():
                   fmax : float | None=None, 
                   kmin : int | None=-20, 
                   kmax : int | None=-6,
-                  filter_params : tuple[tuple[float, float], 
-                                  tuple[float, float]] | None=None) -> xr.DataArray:
+                  filter_dict : dict | None=None) -> xr.DataArray:
         """
         Filter tropical depressions.
 
@@ -460,22 +459,23 @@ class KF():
         kmin, kmax : int or None
             Minimum and maximum wavenumber.
 
-        filter_params : tuple[tuple[float, float],
-                              tuple[float, float]] or None
-            A tuple of tuples containing the filter parameters for
-            the TD mask. The first tuple contains the parameters for
-            the upper bound, and the second tuple contains the parameters
-            for the lower bound. Each tuple should contain two values:
-            (a, b), where a is the slope for wavenumber and frequency
-            and b is the intercept. If None, the default values will
-            be used.
+        filter_dict : dict or None
+            A dictionary containing the filter parameters in the form of
+            {
+                'upper': (a, b),
+                'lower': (a, b),
+                'right': (a, b),
+                'left': (a, b),
+            }
+            where a and b are the slope and intercept of each boundary.
+            If None, default values are used.
         """
         wavenumber, frequency = self.kf_reordered.wavenumber, self.kf_reordered.frequency
 
         mask = td_mask(wavenumber,
                        frequency,
                        fmin, fmax, kmin, kmax,
-                       filter_params=filter_params)
+                       filter_dict=filter_dict)
 
         self._save_mask(mask, 'td')
         return self.kf_filter(mask)

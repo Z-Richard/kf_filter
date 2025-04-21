@@ -279,8 +279,7 @@ def td_mask(wavenumber : xr.DataArray | np.ndarray,
             fmax : float | None=None, 
             kmin : int | None=-20, 
             kmax : int | None=-6,
-            filter_params : tuple[tuple[float, float], 
-                                  tuple[float, float]] | None=None) -> xr.DataArray:
+            filter_dict : dict | None=None) -> xr.DataArray:
     r"""Returns a mask for tropical depression (TD).
 
     Parameters
@@ -294,15 +293,16 @@ def td_mask(wavenumber : xr.DataArray | np.ndarray,
     kmin, kmax : int or None
         Minimum and maximum frequency for filtering
 
-    filter_params : tuple[tuple[float, float],
-                          tuple[float, float]] or None
-        A tuple of tuples containing the filter parameters for
-        the TD mask. The first tuple contains the parameters for
-        the upper bound, and the second tuple contains the parameters
-        for the lower bound. Each tuple should contain two values:
-        (a, b), where a is the slope for wavenumber and frequency
-        and b is the intercept. If None, the default values will
-        be used.
+    filter_dict : dict or None
+        A dictionary containing the filter parameters in the form of
+        {
+            'upper': (a, b),
+            'lower': (a, b),
+            'right': (a, b),
+            'left': (a, b),
+        }
+        where a and b are the slope and intercept of each boundary.
+        If None, default values are used.
 
     Returns
     -------
@@ -316,17 +316,34 @@ def td_mask(wavenumber : xr.DataArray | np.ndarray,
                                           kmin, kmax,
                                           return_individual=True)
     
-    if filter_params is None:
-        filter_params = ((84, 22), (84, 13 / 2.5))
+    if filter_dict is None:
+        from kf_filter.consts import filter_dict
 
-    upper_params, lower_params = filter_params
-    upper_a, upper_b = upper_params
-    lower_a, lower_b = lower_params
+    upper = filter_dict.get('upper')
+    lower = filter_dict.get('lower')
+    right = filter_dict.get('right')
+    left = filter_dict.get('left')
 
-    logical_plus.append((upper_a * frequency + wavenumber < upper_b))
-    logical_minus.append((upper_a * frequency + wavenumber + upper_b > 0))
+    upper_a, upper_b = (None, None) if upper is None else upper
+    lower_a, lower_b = (None, None) if lower is None else lower
+    right_a, right_b = (None, None) if right is None else right
+    left_a, left_b = (None, None) if left is None else left
 
-    logical_plus.append((lower_a * frequency + wavenumber > lower_b))
-    logical_minus.append((lower_a * frequency + wavenumber + lower_b < 0))
+    if upper is not None:
+        logical_plus.append((upper_a * frequency + wavenumber < upper_b))
+        logical_minus.append((upper_a * frequency + wavenumber + upper_b > 0))
+
+    if lower is not None:
+        logical_plus.append((lower_a * frequency + wavenumber > lower_b))
+        logical_minus.append((lower_a * frequency + wavenumber + lower_b < 0))
+
+    # Test parallelogram construction
+    if right is not None:
+        logical_plus.append((right_a * frequency + wavenumber < right_b))
+        logical_minus.append((right_a * frequency + wavenumber + right_b > 0))
+
+    if left is not None:
+        logical_plus.append((left_a * frequency + wavenumber > left_b))
+        logical_minus.append((left_a * frequency + wavenumber + left_b < 0))
 
     return _combine_plus_minus(logical_plus, logical_minus)
