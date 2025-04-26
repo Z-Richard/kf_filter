@@ -34,3 +34,61 @@ filter_dict = {
     'upper': (84, 22),
     'lower': (84, 13 / 2.5),
 }
+
+wave_args = {
+    'kelvin': {
+        'fmin': 0.05,
+        'fmax': 0.4,
+        'kmin': None,
+        'kmax': 14,
+        'hmin': 8,
+        'hmax': 90
+    },
+    'er': {
+        'fmin': None,
+        'fmax': None,
+        'kmin': -10,
+        'kmax': -1,
+        'hmin': 8,
+        'hmax': 90,
+        'n': 1
+    },
+    'ig': {
+        'fmin': None,
+        'fmax': None,
+        'kmin': -15,
+        'kmax': -1,
+        'hmin': 12,
+        'hmax': 90,
+        'n': 1
+    },
+    'eig': {
+        'fmin': None,
+        'fmax': 0.55,
+        'kmin': 0,
+        'kmax': 15,
+        'hmin': 12,
+        'hmax': 50
+    },
+    'mrg': {
+        'fmin': None,
+        'fmax': None,
+        'kmin': -10,
+        'kmax': -1,
+        'hmin': 8,
+        'hmax': 90
+    },
+    'td': {
+        'fmin': None,
+        'fmax': None,
+        'kmin': -20,
+        'kmax': -6,
+        'filter_dict': filter_dict
+    },
+    'mjo': {
+        'fmin': 1 / 96,
+        'fmax': 1 / 20,
+        'kmin': 0,
+        'kmax': 10
+    }
+}

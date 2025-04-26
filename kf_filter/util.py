@@ -12,6 +12,7 @@ from kf_filter.consts import (
     beta,
     wave_func,
     wave_types,
+    wave_args
 )
 
 from functools import reduce
@@ -218,13 +219,7 @@ def kf_mask(wavenumber : xr.DataArray | np.ndarray,
 def wave_mask(wavenumber : xr.DataArray | np.ndarray,
               frequency : xr.DataArray | np.ndarray,
               wave_type : str,
-              fmin : float | None=0.05, 
-              fmax : float | None=0.4, 
-              kmin : int | None=None, 
-              kmax : int | None=14, 
-              hmin : int | None=8,
-              hmax : int | None=90,
-              n : int = 1) -> xr.DataArray:
+              **kwargs) -> xr.DataArray:
         r"""Generic wave filtering.
         
         Parameters
@@ -239,9 +234,15 @@ def wave_mask(wavenumber : xr.DataArray | np.ndarray,
         """
         wavenumber, frequency = _wrap_to_xarray(wavenumber, frequency)
 
+        args = wave_args[wave_type]
+        args.update(kwargs)
+
         logical_plus, logical_minus = kf_mask(wavenumber, 
                                               frequency,
-                                              fmin, fmax, kmin, kmax, 
+                                              args['fmin'],
+                                              args['fmax'],
+                                              args['kmin'],
+                                              args['kmax'], 
                                               return_individual=True)
 
         if wave_type not in wave_types:
@@ -249,6 +250,10 @@ def wave_mask(wavenumber : xr.DataArray | np.ndarray,
 
         # Select the dispersion relation function from class attributes
         func = wave_func[wave_type]
+
+        hmin = args.get('hmin', None)
+        hmax = args.get('hmax', None)
+        n = args.get('n', 1)
         
         if hmin is not None:
             k, omega = _nondim_k_omega(wavenumber, frequency, hmin)
@@ -275,11 +280,7 @@ def wave_mask(wavenumber : xr.DataArray | np.ndarray,
 
 def td_mask(wavenumber : xr.DataArray | np.ndarray,
             frequency : xr.DataArray | np.ndarray,
-            fmin : float | None=None,
-            fmax : float | None=None, 
-            kmin : int | None=-20, 
-            kmax : int | None=-6,
-            filter_dict : dict | None=None) -> xr.DataArray:
+            **kwargs) -> xr.DataArray:
     r"""Returns a mask for tropical depression (TD).
 
     Parameters
@@ -310,14 +311,19 @@ def td_mask(wavenumber : xr.DataArray | np.ndarray,
     """
     wavenumber, frequency = _wrap_to_xarray(wavenumber, frequency)
 
+    # Update td_args with the [fmin, fmax, kmin, kmax] values
+    td_args = wave_args['td']
+    td_args.update(kwargs)
+
     logical_plus, logical_minus = kf_mask(wavenumber,
                                           frequency,
-                                          fmin, fmax, 
-                                          kmin, kmax,
+                                          td_args['fmin'], 
+                                          td_args['fmax'],
+                                          td_args['kmin'],
+                                          td_args['kmax'], 
                                           return_individual=True)
-    
-    if filter_dict is None:
-        from kf_filter.consts import filter_dict
+
+    filter_dict = td_args.get('filter_dict', None)
 
     upper = filter_dict.get('upper')
     lower = filter_dict.get('lower')

@@ -9,15 +9,12 @@ import numpy as np
 import xarray as xr
 
 from scipy.signal import detrend
-from functools import reduce
-import operator
-from typing import Callable
-
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 from kf_filter.consts import (
-    wave_title
+    wave_title,
+    wave_args
 )
 
 from kf_filter.util import (
@@ -266,13 +263,8 @@ class KF():
     
     def wave_filter(self,
                     wave_type : str,
-                    fmin : float | None=0.05, 
-                    fmax : float | None=0.4, 
-                    kmin : int | None=None, 
-                    kmax : int | None=14, 
-                    hmin : int | None=8,
-                    hmax : int | None=90,
-                    n : int = 1) -> xr.DataArray:
+                    **kwargs
+                    ) -> xr.DataArray:
         r"""Generic wave filtering for dry equatorial waves.
         
         Parameters
@@ -288,18 +280,14 @@ class KF():
         mask = wave_mask(self.kf_reordered.wavenumber,
                          self.kf_reordered.frequency,
                          wave_type,
-                         fmin, fmax, kmin, kmax, hmin, hmax, n)
+                         **kwargs)
         self._save_mask(mask, wave_type)
 
         return self.kf_filter(mask)
 
     def kelvin_filter(self, 
-                      fmin : float | None=0.05, 
-                      fmax : float | None=0.4, 
-                      kmin : int | None=None, 
-                      kmax : int | None=14, 
-                      hmin : int | None=8,
-                      hmax : int | None=90) -> xr.DataArray:
+                      **kwargs
+                      ) -> xr.DataArray:
         r"""
         Filter Kelvin wave.
 
@@ -319,16 +307,11 @@ class KF():
         Nondimensionalized \omega and k for KW:
         \hat{\omega} = \hat{k}
         """
-        return self.wave_filter('kelvin', fmin, fmax, kmin, kmax, hmin, hmax)
+        return self.wave_filter('kelvin', **kwargs)
 
-    def er_filter(self, 
-                  fmin : float | None=None, 
-                  fmax : float | None=None, 
-                  kmin : int | None=-10, 
-                  kmax : int | None=-1, 
-                  hmin : int | None=8, 
-                  hmax : int | None=90, 
-                  n : int=1) -> xr.DataArray:
+    def er_filter(self,
+                  **kwargs, 
+                  ) -> xr.DataArray:
         r"""
         Filter Equatorial Rossby wave.
 
@@ -351,16 +334,11 @@ class KF():
 
         \hat{omega} = \hat{k} / {2n + 1 + \hat{k} ** 2}
         """
-        return self.wave_filter('er', fmin, fmax, kmin, kmax, hmin, hmax, n)
+        return self.wave_filter('er', **kwargs)
 
     def ig_filter(self,
-                  fmin : float | None=None, 
-                  fmax : float | None=None, 
-                  kmin : int | None=-15, 
-                  kmax : int | None=-1, 
-                  hmin : int | None=12, 
-                  hmax : int | None=90, 
-                  n : int=1) -> xr.DataArray:
+                  **kwargs
+                  ) -> xr.DataArray:
         r"""
         Filter westward-propagating inertia-gravity waves.
 
@@ -383,15 +361,11 @@ class KF():
 
         \hat{omega}^2 = \hat{k}^2 + 2 * n + 1
         """
-        return self.wave_filter('ig', fmin, fmax, kmin, kmax, hmin, hmax, n)
+        return self.wave_filter('ig', **kwargs)
 
     def eig_filter(self,
-                   fmin : float | None=None, 
-                   fmax : float | None=0.55, 
-                   kmin : int | None=0, 
-                   kmax : int | None=15, 
-                   hmin : int | None=12, 
-                   hmax : int | None=50) -> xr.DataArray:
+                   **kwargs
+                   ) -> xr.DataArray:
         r"""
         Filter eastward-propagating inertia-gravity waves.
 
@@ -412,15 +386,11 @@ class KF():
 
         \hat{omega}^2 = \hat{k}^2 + 2 * n + 1
         """
-        return self.wave_filter('eig', fmin, fmax, kmin, kmax, hmin, hmax)
+        return self.wave_filter('eig', **kwargs)
 
     def mrg_filter(self,
-                   fmin : float | None=None, 
-                   fmax : float | None=None, 
-                   kmin : int | None=-10, 
-                   kmax : int | None=-1, 
-                   hmin : int | None=8, 
-                   hmax : int | None=90):
+                   **kwargs
+                   ) -> xr.DataArray:
         """
         Filter mixed-Rossby gravity waves.
 
@@ -440,14 +410,11 @@ class KF():
         No additional constraint on MRG waves such as wavenumber/frequency
         cutoff is applied.
         """
-        return self.wave_filter('mrg', fmin, fmax, kmin, kmax, hmin, hmax)
+        return self.wave_filter('mrg', **kwargs)
 
-    def td_filter(self, 
-                  fmin : float | None=None, 
-                  fmax : float | None=None, 
-                  kmin : int | None=-20, 
-                  kmax : int | None=-6,
-                  filter_dict : dict | None=None) -> xr.DataArray:
+    def td_filter(self,
+                  **kwargs
+                  ) -> xr.DataArray:
         """
         Filter tropical depressions.
 
@@ -474,17 +441,14 @@ class KF():
 
         mask = td_mask(wavenumber,
                        frequency,
-                       fmin, fmax, kmin, kmax,
-                       filter_dict=filter_dict)
+                       **kwargs)
 
         self._save_mask(mask, 'td')
         return self.kf_filter(mask)
     
     def mjo_filter(self,
-                   fmin : float | None=1/96, 
-                   fmax : float | None=1/20, 
-                   kmin : int | None=0, 
-                   kmax : int | None=10) -> xr.DataArray:
+                   **kwargs
+                   ) -> xr.DataArray:
         """
         Filter the Madden-Julian Oscillation (MJO).
 
@@ -504,7 +468,7 @@ class KF():
         """
         mask = kf_mask(self.kf_reordered.wavenumber,
                        self.kf_reordered.frequency,
-                       fmin, fmax, kmin, kmax)
+                       **kwargs)
         self._save_mask(mask, 'mjo')
         return self.kf_filter(mask)
 
