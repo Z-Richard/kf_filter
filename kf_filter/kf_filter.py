@@ -182,7 +182,39 @@ class KF():
         """
         pass
 
-    def kf_filter(self, mask : xr.DataArray) -> xr.DataArray:
+    def kf_filter(self, 
+                  fmin : float | None = None, 
+                  fmax : float | None = None, 
+                  kmin : int | None = None, 
+                  kmax : int | None = None) -> xr.DataArray:
+        """
+        Generic filter on the wavenumber-frequency domain based on [fmin, fmax] and
+        [kmin, kmax].
+
+        Parameters
+        ----------
+        fmin, fmax : float or None
+            Minimum and maximum frequency (cycles per day).
+
+        kmin, kmax : int or None
+            Minimum and maximum wavenumber.
+
+        Returns
+        -------
+        TODO
+        """
+        mask = kf_mask(self.kf_reordered.wavenumber,
+                       self.kf_reordered.frequency,
+                       fmin=fmin,
+                       fmax=fmax,
+                       kmin=kmin,
+                       kmax=kmax)
+        
+        self._save_mask(mask, 'kf')
+        
+        return self.mask_filter(mask)
+
+    def mask_filter(self, mask : xr.DataArray) -> xr.DataArray:
         """
         Filter on the wavenumber-frequency domain based on `mask`.
         
@@ -258,6 +290,8 @@ class KF():
             self.td_mask = mask
         elif wave_type == 'mjo':
             self.mjo_mask = mask
+        elif wave_type == 'kf':
+            self.kf_mask = mask
         else:
             raise ValueError(f'Unsupported wave type "{wave_type}".')
     
@@ -283,7 +317,7 @@ class KF():
                          **kwargs)
         self._save_mask(mask, wave_type)
 
-        return self.kf_filter(mask)
+        return self.mask_filter(mask)
 
     def kelvin_filter(self, 
                       **kwargs
@@ -444,7 +478,7 @@ class KF():
                        **kwargs)
 
         self._save_mask(mask, 'td')
-        return self.kf_filter(mask)
+        return self.mask_filter(mask)
     
     def mjo_filter(self,
                    **kwargs
@@ -470,7 +504,7 @@ class KF():
                        self.kf_reordered.frequency,
                        **kwargs)
         self._save_mask(mask, 'mjo')
-        return self.kf_filter(mask)
+        return self.mask_filter(mask)
 
     def _visualize_aux(self, 
                        wave_type : str, 
@@ -532,6 +566,8 @@ class KF():
             if not hasattr(self, 'mjo_mask'):
                 self.mjo_filter()
             return self.mjo_mask
+        elif wave_type == 'kf':
+            return self.kf_mask
         else:
             raise ValueError(f'Unsupported wave type "{wave_type}".')
 
@@ -544,7 +580,8 @@ class KF():
         Parameters
         ----------
         wave_type : str
-            Must be one of 'er', 'kelvin', 'ig', 'eig', 'mrg', 'td'.
+            Must be one of 'er', 'kelvin', 'ig', 'eig', 'mrg', 'td', 'mjo',
+            or 'kf'.
         """
         mask = self.get_mask(wave_type)
         self._visualize_aux(wave_type, mask, hide_negative)
